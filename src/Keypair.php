@@ -44,6 +44,13 @@ class Keypair
     private $publicKey;
 
     /**
+     * Mnemonic words
+     *
+     * @var string
+     */
+    private $mnemonic;
+
+    /**
      * Creates a new random keypair
      *
      * @return Keypair
@@ -102,13 +109,15 @@ class Keypair
     public static function newFromMnemonic($mnemonic, $passphrase = '', $index = 0)
     {
         $bip39 = new Bip39();
+
         $seedBytes = $bip39->mnemonicToSeedBytesWithErrorChecking($mnemonic, $passphrase);
 
         $masterNode = HdNode::newMasterNode($seedBytes);
 
         $accountNode = $masterNode->derivePath(sprintf("m/44'/148'/%s'", $index));
 
-        return static::newFromRawSeed($accountNode->getPrivateKeyBytes());
+        return static::newFromRawSeed($accountNode->getPrivateKeyBytes())->setMnemonic($mnemonic);
+
     }
 
     public function __construct($seedString = null)
@@ -272,5 +281,33 @@ class Keypair
         Ed25519::seed_keypair($pk, $sk, $this->privateKey);
 
         return $sk;
+    }
+
+    public function getSeed()
+    {
+        return $this->seed;
+    }
+
+    public function getMnemonic()
+    {
+        return $this->mnemonic;
+    }
+
+    public function setMnemonic($mnemonic)
+    {
+        $this->mnemonic = $mnemonic;
+
+        return $this;
+    }
+
+    public function toArray()
+    {
+        return [
+            'public' => $this->getPublicKey(),
+
+            'private' => $this->getSecret(),
+
+            'mnemonic' => $this->getMnemonic(),
+        ];
     }
 }
